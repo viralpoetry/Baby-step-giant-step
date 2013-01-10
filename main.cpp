@@ -7,8 +7,15 @@ For more information, see http://en.wikipedia.org/wiki/Baby-step_giant-step
 #include <NTL/ZZ.h>
 
 /* x .. sqrt(2^40) = 2^20 = 1048576 */
-#define B 1048576
-#define TABLE_SIZE  116777261
+
+/* prime num = less collisions */
+#define TABLE_SIZE  21677779
+
+/* table computation & lookup*/
+#define T 724288
+#define B 524288
+
+int collisions = 0;
 
 NTL_CLIENT
 
@@ -92,20 +99,20 @@ void htInsert( HASHTABLE *t, ZZ key, int value )
     next = t->table[index];
     
     /* collision */
-    if( next != NULL /*&& next->value != NULL*/ )
+    if( next != NULL )
     {
 	   
 	   /* walk to the end */
 	   while( next->p_coll != NULL )
 	   {
-		  printf("walking ");
-
 		  prev = next;
 		  next = next->p_coll;
 	   }
 	   
 	   newExponent = htNewExponent(value);
 	   next->p_coll = newExponent;
+
+	   collisions++;
     }
     else
     {
@@ -213,11 +220,11 @@ int main()
    
     t = GetTime();
 
-    /* ~23s */
+    /* ~17s */
     printf( "Building hashtable...\n\n" );
 
     int x1 = 1;
-    for( ; x1 < B; x1++ )
+    for( ; x1 < T; x1++ )
     {
 	   /* compute x1*g^-B */
 	   MulMod( gx1, gx1, gpowB, p );
@@ -225,11 +232,12 @@ int main()
 	   /* insert into table */
 	   htInsert( tabulka, gx1, x1 );  
     }
+    printf( "Collisions:%d\n", collisions);
 
     t = GetTime() - t;
     printf( "\nTime: %f sec\n", t );
 
-    /* ~29s */
+    /* ~13s */
     printf( "Searching for collision...\n" );
 
     int x0 = 1;
